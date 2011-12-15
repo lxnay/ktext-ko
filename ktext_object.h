@@ -145,7 +145,7 @@ ktext_pop(ktext_object_t *k, char **text);
 /**
  * ktext_empty() - empty the FIFO, releasing all the text objects in it.
  *
- * @k: 		the ktext_object_t object
+ * @k: 	the ktext_object_t object
  *
  *
  */
@@ -156,7 +156,7 @@ ktext_empty(ktext_object_t *k);
  * ktext_reader_trylock() - try to acquire a reader lock
  * 							on ktext_object_t
  *
- * @k: 		the ktext_object_t object
+ * @k: 	the ktext_object_t object
  *
  * Return 1 for success, 0 for failure.
  *
@@ -168,7 +168,7 @@ ktext_reader_trylock(ktext_object_t *k);
  * ktext_writer_trylock() - try to acquire a writer lock
  * 							on ktext_object_t
  *
- * @k: 		the ktext_object_t object
+ * @k: 	the ktext_object_t object
  *
  * Return 1 for success, 0 for failure.
  *
@@ -180,7 +180,7 @@ ktext_writer_trylock(ktext_object_t *k);
  * ktext_reader_lock() - acquire a reader lock
  * 						 (uninterruptible)
  *
- * @k: 		the ktext_object_t object
+ * @k: 	the ktext_object_t object
  *
  */
 void
@@ -190,7 +190,7 @@ ktext_reader_lock(ktext_object_t *k);
  * ktext_writer_lock() - acquire a writer lock
  * 						 (uninterruptible)
  *
- * @k: 		the ktext_object_t object
+ * @k: 	the ktext_object_t object
  *
  */
 void
@@ -199,7 +199,7 @@ ktext_writer_lock(ktext_object_t *k);
 /**
  * ktext_reader_unlock() - release a reader lock
  *
- * @k: 		the ktext_object_t object
+ * @k: 	the ktext_object_t object
  *
  */
 void
@@ -208,7 +208,7 @@ ktext_reader_unlock(ktext_object_t *k);
 /**
  * ktext_writer_unlock() - release a writer lock
  *
- * @k: 		the ktext_object_t object
+ * @k: 	the ktext_object_t object
  *
  */
 void

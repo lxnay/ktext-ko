@@ -30,7 +30,7 @@
 /**
  * fops_status_init() - initialize a fops_status_t object.
  *
- * @fs:		the fops_status_t object
+ * @fs:	the fops_status_t object
  *
  * This is an internal function used to initialize
  * a new fops_status_t object, which is bound to a single
@@ -71,9 +71,9 @@ fops_status_init(fops_status_t **fs, bool allocate_text)
 			status = -ENOMEM;
 			goto fops_status_init_dealloc_fs;
 		}
-	} else {
+	} else
 		(*fs)->text = NULL;
-	}
+
 	(*fs)->count = 0;
 
 	(*fs)->total = KTEXT_SIZE;
@@ -95,7 +95,7 @@ fops_status_init_quit:
 /**
  * fops_status_destroy() - destroy a fops_status_t object.
  *
- * @fs:		the fops_status_t object
+ * @fs:	the fops_status_t object
  *
  * This is an internal function used to destroy
  * a previously allocated fops_status_t object.

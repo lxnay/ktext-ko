@@ -34,7 +34,6 @@ ktext_object_init(ktext_object_t *k)
 {
 	k->n_elem = 0;
 	init_rwsem(&k->__ktext_rwsem);
-	/* for mutual exclusion */
 	mutex_init(&k->prot);
 	INIT_LIST_HEAD(&k->head);
 }

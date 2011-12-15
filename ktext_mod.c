@@ -39,10 +39,6 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-/* TODO:
- * - check ktext_object_destroy -- is there any problem with interruptible
- */
-
 #include <linux/kernel.h>
 #include <linux/module.h>
 #include <linux/slab.h>
@@ -293,10 +289,9 @@ ktext_read(struct file *filp, char __user *buf,
 		filp->private_data = fs;
 	}
 
-	if (fs->text == NULL) {
+	if (fs->text == NULL)
 		/* nothing to read */
 		goto ktext_read_quit;
-	}
 
 	/* NOTE: do not account the NULL terminator on read,
 	 * it doesn't look nice */
@@ -368,11 +363,10 @@ ktext_write(struct file *filp, const char __user *ubuf,
 		goto ktext_write_quit;
 	}
 
-	if (orig_count > free_buf) {
+	if (orig_count > free_buf)
 		count = free_buf;
-	} else {
+	else
 		count = orig_count;
-	}
 
 #ifdef KTEXT_DEBUG
 	printk(KERN_NOTICE "ktext_write: file: %p. "
