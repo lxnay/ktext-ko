@@ -138,6 +138,9 @@ ktext_push(ktext_object_t *k, char *text, size_t count)
 		goto ktext_push_quit_noalloc;
 	}
 
+#ifdef KTEXT_DEBUG
+	printk(KERN_NOTICE "ktext_push: preparing to kzalloc: %zd bytes\n", count);
+#endif
 	own_text = (char *) kzalloc((sizeof(char) * count), GFP_KERNEL);
 	if (own_text == NULL) {
 		printk(KERN_NOTICE "ktext_push: cannot allocate memory (damn)\n");
