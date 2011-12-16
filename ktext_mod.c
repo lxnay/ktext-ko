@@ -408,7 +408,8 @@ ktext_init(void)
 		status = -EINVAL;
 		goto ktext_init_quit;
 	}
-	printk(KERN_NOTICE "ktext_init: max_elements: %d\n", max_elements);
+	printk(KERN_NOTICE "ktext_init: max_elements: %d, nbmode: %d\n",
+			max_elements, KTEXT_NONBLOCK_SUPPORT);
 	status = ktext_object_init(&ktext);
 	if (status != 0)
 		goto ktext_init_quit;
