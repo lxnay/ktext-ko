@@ -26,8 +26,8 @@ KTEXT_DEBUG -- if set, it enables verbose output to dmesg.
 KTEXT_NONBLOCK_SUPPORT (default 1) -- if set to one, O_NONBLOCK shall be
 taken into consideration and used to determine if the open() is allowed
 to block in case of readers or writers holding the resource.
-Unfortunately, one readers/writers implementation makes use of
-rw_semaphore, which doesn't have an INTERRUPTIBLE version.
+Unfortunately, one readers/writers locking implementation makes use of
+rw_semaphore, which doesn't have a INTERRUPTIBLE version.
 This means that, if KTEXT_NONBLOCK_SUPPORT = 1 and your threads don't
 deal with the device file correctly (crashing without closing the fd or
 doing other kinds of resource leaks involving /dev/ktext, you're
