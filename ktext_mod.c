@@ -57,7 +57,7 @@ module_param(max_elements, int, 0);
 MODULE_PARM_DESC(max_elements, "Maximum amount of FIFO elements");
 
 /* global k_text object */
-static ktext_object_t ktext;
+static ktext_object_t *ktext;
 
 /**
  * ktext_open() - the file_operations.open function.
@@ -116,17 +116,17 @@ ktext_open(struct inode *inode, struct file *filp)
 	if (!write_mode) {
 		/* try to acquire the read end */
 		if (non_block)
-			rwsem_acquired = ktext_reader_trylock(&ktext);
+			rwsem_acquired = ktext_reader_trylock(ktext);
 		else
 			/* CANBLOCK */
-			ktext_reader_lock(&ktext);
+			ktext_reader_lock(ktext);
 	} else {
 		/* WRITE */
 		if (non_block)
-			rwsem_acquired = ktext_writer_trylock(&ktext);
+			rwsem_acquired = ktext_writer_trylock(ktext);
 		else
 			/* CANBLOCK */
-			ktext_writer_lock(&ktext);
+			ktext_writer_lock(ktext);
 	}
 
 	if (non_block && !rwsem_acquired) {
@@ -145,7 +145,7 @@ ktext_open(struct inode *inode, struct file *filp)
 				"Write mode (append: off)\n",
 				inode, filp);
 #endif
-		push_allowed = ktext_push_allowed(&ktext, max_elements);
+		push_allowed = ktext_push_allowed(ktext, max_elements);
 		if (unlikely(!push_allowed)) {
 			printk(KERN_NOTICE
 					"ktext_open: max_elements limit reached (sorry)\n");
@@ -166,7 +166,7 @@ ktext_open(struct inode *inode, struct file *filp)
 
 ktext_open_quit_write_sem_up:
 	/* ktext_release is not called if we get here */
-	ktext_writer_unlock(&ktext);
+	ktext_writer_unlock(ktext);
 
 ktext_open_quit:
 	return status;
@@ -210,7 +210,7 @@ ktext_release(struct inode *inode, struct file *filp)
 	 * to our list.
 	 */
 	if (write_mode && fs) {
-		status = ktext_push(&ktext, fs->text, fs->count);
+		status = ktext_push(ktext, fs->text, fs->count);
 #ifdef KTEXT_DEBUG
 		printk(KERN_NOTICE "ktext_release: inode: %p - file: %p. "
 				"write: true, pushing: %s, status: %d\n",
@@ -224,9 +224,9 @@ ktext_release(struct inode *inode, struct file *filp)
 		filp->private_data = NULL;
 	}
 	if (write_mode)
-		ktext_writer_unlock(&ktext);
+		ktext_writer_unlock(ktext);
 	else
-		ktext_reader_unlock(&ktext);
+		ktext_reader_unlock(ktext);
 	return status;
 }
 
@@ -274,7 +274,7 @@ ktext_read(struct file *filp, char __user *buf,
 		}
 
 		/* get the first string on the FIFO */
-		status = ktext_pop(&ktext, &text);
+		status = ktext_pop(ktext, &text);
 		if (status != 0)
 			goto ktext_read_quit;
 
@@ -396,14 +396,25 @@ static struct miscdevice ktext_device = {
 static int __init
 ktext_init(void)
 {
+	int status;
+
+	status = 0;
+
 	/* check visit argument, validate value */
 	if ((max_elements < 0) || (max_elements > 10000)) {
 		printk(KERN_NOTICE "ktext: invalid max_elements= parameter (between 0 and 10000)\n");
-		return -EINVAL;
+		status = -EINVAL;
+		goto ktext_init_quit;
 	}
 	printk(KERN_NOTICE "ktext_init: max_elements: %d\n", max_elements);
-	ktext_object_init(&ktext);
-	return misc_register(&ktext_device);
+	status = ktext_object_init(&ktext);
+	if (status != 0)
+		goto ktext_init_quit;
+
+	status = misc_register(&ktext_device);
+
+ktext_init_quit:
+	return status;
 }
 
 static void __exit

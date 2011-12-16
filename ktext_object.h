@@ -29,32 +29,16 @@
 #include "ktext_config.h"
 
 /**
- * struct ktext_object_node -	Linux list_head node objectm
- *
- * @text:				the actual text (payload)
- * @kl:					the list_head object
+ * struct ktext_object_node -	Linux list_head node object.
+ * 								Opaque object.
  */
-typedef struct ktext_object_node {
-    char *text;
-    struct list_head kl;
-} ktext_object_node_t;
+typedef struct ktext_object_node ktext_object_node_t;
 
 /**
  * struct ktext_object -	the ktree FIFO object implemented with
- * 							Kernel lists.
- *
- * @n_elem:				number of elements in the FIFO
- * @head:				the list_head object
- * @ktext_rwsem:		the readers/writers semaphore
- * @prot:				the semaphore protecting against concurrent
- * 						access to the object
+ * 							Kernel lists. Opaque object.
  */
-typedef struct ktext_object {
-	size_t n_elem;
-	struct list_head head;
-	struct rw_semaphore __ktext_rwsem;
-	struct mutex prot;
-} ktext_object_t;
+typedef struct ktext_object ktext_object_t;
 
 /**
  * ktext_object_init() - initialize a previously allocated
@@ -63,8 +47,8 @@ typedef struct ktext_object {
  * @k:	the ktext_object_t object
  *
  */
-void
-ktext_object_init(ktext_object_t *k);
+int __must_check
+ktext_object_init(ktext_object_t **k);
 
 /**
  * ktext_object_destroy() - deinitialize a previously initialized
@@ -74,7 +58,7 @@ ktext_object_init(ktext_object_t *k);
  *
  */
 void
-ktext_object_destroy(ktext_object_t *k);
+ktext_object_destroy(ktext_object_t **k);
 
 /**
  * ktext_object_node_init() -	initialize a previously allocated

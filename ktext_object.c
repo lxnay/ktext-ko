@@ -29,20 +29,67 @@
 #include "ktext_config.h"
 #include "ktext_object.h"
 
-void
-ktext_object_init(ktext_object_t *k)
+/**
+ * struct ktext_object_node -	Linux list_head node objectm
+ *
+ * @text:				the actual text (payload)
+ * @kl:					the list_head object
+ */
+typedef struct ktext_object_node {
+    char *text;
+    struct list_head kl;
+} ktext_object_node_t;
+
+/**
+ * struct ktext_object -	the ktree FIFO object implemented with
+ * 							Kernel lists.
+ *
+ * @n_elem:				number of elements in the FIFO
+ * @head:				the list_head object
+ * @ktext_rwsem:		the readers/writers semaphore
+ * @prot:				the semaphore protecting against concurrent
+ * 						access to the object
+ */
+typedef struct ktext_object {
+	size_t n_elem;
+	struct list_head head;
+	struct rw_semaphore __ktext_rwsem;
+	struct mutex prot;
+} ktext_object_t;
+
+int __must_check
+ktext_object_init(ktext_object_t **k)
 {
-	k->n_elem = 0;
-	init_rwsem(&k->__ktext_rwsem);
-	mutex_init(&k->prot);
-	INIT_LIST_HEAD(&k->head);
+	if (k == NULL)
+		BUG();
+	if (*k != NULL) {
+		BUG_ON(k);
+		BUG();
+	}
+
+	*k = kmalloc(sizeof(ktext_object_t), GFP_KERNEL);
+	if (*k == NULL)
+		return -ENOMEM;
+
+	(*k)->n_elem = 0;
+	init_rwsem(&(*k)->__ktext_rwsem);
+	mutex_init(&(*k)->prot);
+	INIT_LIST_HEAD(&(*k)->head);
+	return 0;
 }
 
 
 void
-ktext_object_destroy(ktext_object_t *k)
+ktext_object_destroy(ktext_object_t **k)
 {
-    ktext_empty(k);
+	if (k == NULL)
+		BUG();
+	if (*k == NULL) {
+		BUG_ON(*k);
+		BUG();
+	}
+    ktext_empty(*k);
+    kfree(*k);
 }
 
 void
@@ -92,7 +139,7 @@ ktext_push(ktext_object_t *k, char *text, size_t count)
 	}
 
 	own_text = (char *) kzalloc((sizeof(char) * count), GFP_KERNEL);
-	if (!own_text) {
+	if (own_text == NULL) {
 		printk(KERN_NOTICE "ktext_push: cannot allocate memory (damn)\n");
 		status = -ENOMEM;
 		goto ktext_push_quit_noalloc;
@@ -100,7 +147,7 @@ ktext_push(ktext_object_t *k, char *text, size_t count)
 	strcpy(own_text, text);
 
 	n = kmalloc(sizeof(ktext_object_node_t), GFP_KERNEL);
-	if (!n) {
+	if (n == NULL) {
 		printk(KERN_NOTICE "ktext_push: cannot allocate memory (damn 2)\n");
 		status = -ENOMEM;
 		goto ktext_push_quit_err_sem_up;
