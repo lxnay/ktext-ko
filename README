@@ -39,14 +39,14 @@ KTEXT_SIZE -- the maximum text length userspace can send to the module
 for each open().
 
 KTEXT_ALT_RW_STARV_PROT -- if defined, an alternative readers/writers
-anti-starvation protocol will be used (instead of rw_semaphore).
+anti-starvation protocol shall be used (instead of rw_semaphore).
 This protocol shall interleave readers with writers making possible
 to avoid writers starvation. It is otherwise known as "preventive
 signal" protocol.
 
 The kernel module supports the following insmod parameters:
 
-max_elements (default 0: unlimited) -- makes possible to set an upper
+max_elements=n (default 0: unlimited) -- makes possible to set an upper
 limit to the amount of elements in the FIFO. In case of limit reached,
 -ENOSPC shall be returned on open().
 
