@@ -1,0 +1,183 @@
+==============================================================================
+ktext.ko -- Stash and Suck text from kernel memory.
+
+:: INTRODUCTION ::
+
+This module makes possible to write and text strings to and from kernel
+memory. It is just a FIFO, you can write text by opening the device in write
+mode. You can read text by opening the same in read mode.
+
+Each open() + write() + close() shall generate one and only one text entry on
+the FIFO. The maximum input buffer size is set, for security reasons, to
+be < PAGE_SIZE - 100 - 1 (the rest shall be truncated).
+
+Concurrency is handled through the typical readers/writer locking and can
+be switched at build time (read below).
+
+TODO ^^^
+
+You must be root in order to access the /dev/ktext device, unless you
+explicitly chmod it or setup udev rules that configure the permissions.
+
+
+Inside ktext_config.h, you can find the following macros:
+
+KTEXT_DEBUG -- if set, it enables verbose output to dmesg.
+
+KTEXT_NONBLOCK_SUPPORT (default 1) -- if set to one, O_NONBLOCK shall be
+taken into consideration and used to determine if the open() is allowed
+to block in case of readers or writers holding the resource.
+Unfortunately, one readers/writers implementation makes use of
+rw_semaphore, which doesn't have an INTERRUPTIBLE version.
+This means that, if KTEXT_NONBLOCK_SUPPORT = 1 and your threads don't
+deal with the device file correctly (crashing without closing the fd or
+doing other kinds of resource leaks involving /dev/ktext, you're
+fucked, or better, your process is fucked).
+If KTEXT_NONBLOCK_SUPPORT = 0, instead of blocking on open(), the same
+shall fail with -EWOULDBLOCK.
+
+KTEXT_SIZE -- the maximum text length userspace can send to the module
+for each open().
+
+KTEXT_ALT_RW_STARV_PROT -- if defined, an alternative readers/writers
+anti-starvation protocol will be used (instead of rw_semaphore).
+This protocol shall interleave readers with writers making possible
+to avoid writers starvation.
+
+The kernel module supports the following insmod parameters:
+
+max_elements (default 0: unlimited) -- makes possible to set an upper
+limit to the amount of elements in the FIFO. In case of limit reached,
+-ENOSPC shall be returned on open().
+
+
+:: ktexter ::
+
+Bundled with this char device, there is a stupid test application.
+It is possible to use it for testing out starvation scenarios under
+certain load circumstances.
+Please MAKE SURE to load ktext.ko with max_elements=0 before trying
+to use ktexter.
+
+Syntax:
+	ktexter <n readers> <n writers> <reader freq> <writer freq>
+
+n readers = number of simultaneous readers (each with its own thread)
+n writers = number of simultaneous writers (each with its own thread)
+reader freq = frequency for which each reader will issue a read()
+writer freq = frequency for which each writer will issue a write()
+
+The following optional switches are also available:
+	--die=<secs>		automatically terminate the execution
+				after <secs>
+	--wsleep=<secs float>	make each writer sleep <secs float>
+				between open() and close(), to simulate
+				slow writes.
+	--rsleep=<secs float>	make each reader sleep <secs float>
+				between open() and close(), to simulate
+				slow reads.
+	--sleep-randomize	add more randomization during sleep
+				(if --rsleep or --wsleep is provided).
+
+
+See also "ktexter --help".
+
+The randomization vs barrier problem:
+You can try how much hard you want to randomize the execution time
+of you thread but you need to face the fact that writers act as a
+barrier for readers. This is very obvious now that I told you,
+but kinda tricky though.
+
+:: SCENARIOS ::
+
+# 1
+
+Considering KTEXT_ALT_RW_STARV_PROT macro undefined and
+KTEXT_NONBLOCK_SUPPORT=1 the following is a small scenario where writers
+can be led to starvation.
+
+	# ktexter 20 1 2 1 --rsleep=3 --sleep-randomize
+
+20 readers, 1 writer (read: just one!).
+Each reader shall read with a 2Hz frequency.
+Each writer shall write with a 1Hz frequency.
+Sleeping 3 seconds per reader.
+
+The writer, before being able to write, shall take approx. 2.5 seconds avg.
+waiting for all the readers to be done.
+In fact, the rw_semaphore is optimized for rare writes and very frequent, fast
+reads. The problem here is the "fast reads" part.
+
+
+# 2
+
+Considering KTEXT_ALT_RW_STARV_PROT macro undefined and
+KTEXT_NONBLOCK_SUPPORT=1 the following is a small scenario where readers but
+also writers (since one is allowed at once) can be led to starvation (it's the
+symmetrical of SCENARIO #1).
+
+	# ktexter 1 20 1 2 --wsleep=3 --sleep-randomize
+
+1 reader (just one!), 20 writers
+Each reader shall read with a 1Hz frequency.
+Each writer shall write with a 2Hz frequency.
+Sleeping 3 seconds per writer.
+
+Very frequent writes, just one read. The worst case scenario for rw_semaphore
+it seems.
+
+Both reads and write take 60 seconds (20 writers * 3 seconds = 60), because
+the first read request acts as a barrier for all the readers: no more readers
+are accepted (thus, blocking them on a mutex or semaphore, depending on
+the rw_semaphore implementation details) until the actual reader is done.
+Note that, the time taken by single writes will grow slowly and stabilize
+to 60.
+
+You can see that --sleep-randomize doesn't show the desired effect after one
+"barrier cycle", because the variance generated by the randomization is very
+limited and the "butterfly effect" is contained by the barrier explained above.
+
+It seems that the barrier is flip flopping from readers to writers, not changing
+the time taken. It for sure depends on "who" is making the first request after
+all the writers or readers have reached the barrier.
+
+
+# 3
+
+Considering KTEXT_ALT_RW_STARV_PROT macro undefined and
+KTEXT_NONBLOCK_SUPPORT=1 the following is a small scenario where readers and
+writers are cool, even though there are a large amount of writers taking
+no time.
+
+	# ktexter 2 20 1 10
+
+2 readers (leaking ahead), 20 writers
+Each reader shall read with a 1Hz frequency.
+Each writer shall write with a 10Hz frequency.
+No sleep.
+
+Writers will take 0.0002s each (accuracy?), readers at most 0.0001s.
+
+
+# 3.1
+
+If we take SCENARIO #3 and add --wsleep=0.2 (200ms), readers will take around 3s
+each.
+
+
+:: CONSIDERATIONS ::
+
+First of all, increasing the sole write (or read) frequency, keeping
+the amount of writers (or readers) to one, doesn't cause any significant latency,
+because there is still a big (in terms of CPU time) gap in where one side of
+the readers/writers lock is "free". Not having overlapping writers or readers is
+OK, but IRL it sucks.
+
+It is clear that, even if the latency goes up, but that's kinda expected when
+using either --wsleep or --rsleep, rw_semaphore does avoid the starvation to
+some degree, which is good. You always see both hands to be satisfied, but
+of course, with different latency and frequency. From my experiments, it does
+it, as also written above using some kind of readers or writers barrier.
+I haven't checked the internal implementation of rw_semaphore yet, so don't
+rely on my considerations.
+
