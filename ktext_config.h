@@ -25,7 +25,8 @@
 #define KTEXT_CONFIG_H_
 
 #define KTEXT_DEBUG
-#define KTEXT_NONBLOCK_SUPPORT 0
+
+#define KTEXT_NONBLOCK_SUPPORT 1
 
 /**
  * kmalloc doesn't work with large requests.
