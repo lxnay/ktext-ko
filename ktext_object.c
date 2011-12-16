@@ -21,10 +21,17 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
+#include "ktext_config.h"
+
 #include <linux/slab.h>
 #include <linux/printk.h>
 #include <linux/list.h>
+#ifdef KTEXT_ALT_RW_STARV_PROT
+#include <linux/semaphore.h>
+#include <linux/mutex.h>
+#else
 #include <linux/rwsem.h>
+#endif
 
 #include "ktext_config.h"
 #include "ktext_object.h"
@@ -53,7 +60,17 @@ typedef struct ktext_object_node {
 typedef struct ktext_object {
 	size_t n_elem;
 	struct list_head head;
+#ifdef KTEXT_ALT_RW_STARV_PROT
+	int __nbr;
+	int __nbw;
+	int __nr;
+	int __nw;
+	struct semaphore __priv_r;
+	struct semaphore __priv_w;
+	struct mutex __m;
+#else
 	struct rw_semaphore __ktext_rwsem;
+#endif
 	struct mutex prot;
 } ktext_object_t;
 
@@ -72,7 +89,17 @@ ktext_object_init(ktext_object_t **k)
 		return -ENOMEM;
 
 	(*k)->n_elem = 0;
+#ifdef KTEXT_ALT_RW_STARV_PROT
+	(*k)->__nbr = 0;
+	(*k)->__nbw = 0;
+	(*k)->__nr = 0;
+	(*k)->__nw = 0;
+	sema_init(&(*k)->__priv_r, 0);
+	sema_init(&(*k)->__priv_w, 0);
+	mutex_init(&(*k)->__m);
+#else
 	init_rwsem(&(*k)->__ktext_rwsem);
+#endif
 	mutex_init(&(*k)->prot);
 	INIT_LIST_HEAD(&(*k)->head);
 	return 0;
@@ -239,30 +266,130 @@ ktext_empty_quit:
 
 int __must_check
 ktext_reader_trylock(ktext_object_t *k) {
+#ifdef KTEXT_ALT_RW_STARV_PROT
+	if (!mutex_trylock(&k->__m))
+		return 0;
+
+	if (k->__nw > 0 || k->__nbw > 0)
+		k->__nbr++;
+	else {
+		k->__nr++;
+		up(&k->__priv_r);
+	}
+	mutex_unlock(&k->__m);
+	down(&k->__priv_r); /* don't use trylock here */
+
+	return 0;
+#else
 	return down_read_trylock(&k->__ktext_rwsem);
+#endif
 }
 
 int __must_check
 ktext_writer_trylock(ktext_object_t *k) {
+#ifdef KTEXT_ALT_RW_STARV_PROT
+	if (!mutex_trylock(&k->__m))
+		return 0;
+
+	if (k->__nr > 0 || k->__nw > 0)
+		k->__nbw++;
+	else {
+		k->__nw++;
+		up(&k->__priv_w);
+	}
+	mutex_unlock(&k->__m);
+	down(&k->__priv_w); /* don't use trylock here */
+
+	return 0;
+#else
 	return down_write_trylock(&k->__ktext_rwsem);
+#endif
 }
 
-void
+int __must_check
 ktext_reader_lock(ktext_object_t *k) {
+#ifdef KTEXT_ALT_RW_STARV_PROT
+	int status;
+
+	status = mutex_lock_interruptible(&k->__m);
+	if (status)
+		return status;
+
+	if (k->__nw > 0 || k->__nbw > 0)
+		k->__nbr++;
+	else {
+		k->__nr++;
+		up(&k->__priv_r);
+	}
+	mutex_unlock(&k->__m);
+	down(&k->__priv_r);
+
+	return status;
+#else
 	down_read(&k->__ktext_rwsem);
+	return 0;
+#endif
 }
 
-void
+int __must_check
 ktext_writer_lock(ktext_object_t *k) {
+#ifdef KTEXT_ALT_RW_STARV_PROT
+	int status;
+
+	status = mutex_lock_interruptible(&k->__m);
+	if (status)
+		return status;
+
+	if (k->__nr > 0 || k->__nw > 0)
+		k->__nbw++;
+	else {
+		k->__nw++;
+		up(&k->__priv_w);
+	}
+	mutex_unlock(&k->__m);
+	down(&k->__priv_w);
+
+	return status;
+#else
 	down_write(&k->__ktext_rwsem);
+	return 0;
+#endif
 }
 
 void
 ktext_reader_unlock(ktext_object_t *k) {
+#ifdef KTEXT_ALT_RW_STARV_PROT
+	mutex_lock(&k->__m);
+	k->__nr--;
+	if (k->__nbw > 0 && k->__nr == 0) {
+		k->__nbw--;
+		k->__nw++;
+		up(&k->__priv_w);
+	}
+	mutex_unlock(&k->__m);
+#else
 	up_read(&k->__ktext_rwsem);
+#endif
 }
 
 void
 ktext_writer_unlock(ktext_object_t *k) {
+#ifdef KTEXT_ALT_RW_STARV_PROT
+	mutex_lock(&k->__m);
+	k->__nw--;
+	if (k->__nbr > 0) {
+		while (k->__nbr > 0) {
+			k->__nbr--;
+			k->__nr++;
+			up(&k->__priv_r);
+		}
+	} else if (k->__nbw > 0) {
+		k->__nbw--;
+		k->__nw++;
+		up(&k->__priv_w);
+	}
+	mutex_unlock(&k->__m);
+#else
 	up_write(&k->__ktext_rwsem);
+#endif
 }

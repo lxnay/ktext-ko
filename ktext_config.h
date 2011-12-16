@@ -24,9 +24,25 @@
 #ifndef KTEXT_CONFIG_H_
 #define KTEXT_CONFIG_H_
 
+/**
+ * Enable debug output if defined.
+ */
 #define KTEXT_DEBUG
 
+/**
+ * If 0, non-blocking mode will be always enabled.
+ * If open() can't acquire ktext_object_t resource
+ * -EWOULDBLOCK will be raised. This also avoids
+ * to block in uninterruptible state, since when using
+ * rw_semaphore that's the only option.
+ */
 #define KTEXT_NONBLOCK_SUPPORT 1
+
+/**
+ * Implement an alternative readers/writers anti-starvation
+ * protocol, as known as preventive signal().
+ */
+#define KTEXT_ALT_RW_STARV_PROT
 
 /**
  * kmalloc doesn't work with large requests.

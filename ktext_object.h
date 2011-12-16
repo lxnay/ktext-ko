@@ -167,7 +167,7 @@ ktext_writer_trylock(ktext_object_t *k);
  * @k: 	the ktext_object_t object
  *
  */
-void
+int __must_check
 ktext_reader_lock(ktext_object_t *k);
 
 /**
@@ -177,7 +177,7 @@ ktext_reader_lock(ktext_object_t *k);
  * @k: 	the ktext_object_t object
  *
  */
-void
+int __must_check
 ktext_writer_lock(ktext_object_t *k);
 
 /**

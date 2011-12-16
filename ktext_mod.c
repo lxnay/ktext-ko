@@ -120,15 +120,21 @@ ktext_open(struct inode *inode, struct file *filp)
 		if (non_block)
 			rwsem_acquired = ktext_reader_trylock(ktext);
 		else
-			/* CANBLOCK */
-			ktext_reader_lock(ktext);
+			/* CANBLOCK but can be INTERRUPTIBLE */
+			status = ktext_reader_lock(ktext);
+			if (status)
+				/* not acquired */
+				goto ktext_open_quit;
 	} else {
 		/* WRITE */
 		if (non_block)
 			rwsem_acquired = ktext_writer_trylock(ktext);
 		else
-			/* CANBLOCK */
-			ktext_writer_lock(ktext);
+			/* CANBLOCK but can be INTERRUPTIBLE */
+			status = ktext_writer_lock(ktext);
+			if (status)
+				/* not acquired */
+				goto ktext_open_quit;
 	}
 
 	if (non_block && !rwsem_acquired) {
