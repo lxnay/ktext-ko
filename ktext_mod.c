@@ -93,6 +93,8 @@ ktext_open(struct inode *inode, struct file *filp)
 	/* if two writers call open() in the same process,
 	 * in the same thread, it's the end of the world.
 	 * Not even SIGKILL can come to the rescue.
+	 * This is because there is no interruptible
+	 * version of rw_semaphore.
 	 */
 	non_block = filp->f_flags & O_NONBLOCK;
 #else
