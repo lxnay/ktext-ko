@@ -84,9 +84,9 @@ See also "ktexter --help".
 
 The randomization vs barrier problem:
 You can try how much hard you want to randomize the execution time
-of you thread but you need to face the fact that writers act as a
-barrier for readers. This is very obvious now that I told you,
-but kinda tricky though.
+of your threads but you need to face the fact that writers act as a
+barrier for readers (and visa versa). This is very obvious now that
+I told you, but kinda tricky though.
 
 :: SCENARIOS ::
 
