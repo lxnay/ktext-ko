@@ -186,4 +186,4 @@ part of the "preventive signal" protocol: waking up all the readers at
 once.
 
 The "Preventive signal" protocol and the current (Linux 3.1) rw_semaphore
-behaviour with respect to starvation seem to be equivalent.
+behaviour with respect to starvation seems to be equivalent.
