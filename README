@@ -179,9 +179,11 @@ It is clear that, even if the latency goes up, but that's kinda expected when
 using either --wsleep or --rsleep, rw_semaphore does avoid the starvation to
 some degree, which is good and kinda expected. You always see both hands to
 be satisfied, but of course, with different latency and frequency.
-From my experiments, it achieves it, as also written above, using some kind
-of readers or writers barrier. I haven't checked the internal implementation
-of rw_semaphore yet, so don't rely on my considerations here.
+From my experiments, rw_semaphore seems to achieve it using some kind of
+barrier. I guess so looking at the not-really fine grained interleaving
+between readers and writers. OTOH, this is the same done by the unlock
+part of the "preventive signal" protocol: waking up all the readers at
+once.
 
 The "Preventive signal" protocol and the current (Linux 3.1) rw_semaphore
 behaviour with respect to starvation seem to be equivalent.
