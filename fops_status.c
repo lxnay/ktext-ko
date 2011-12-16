@@ -32,7 +32,7 @@
  *
  * @fs:	the fops_status_t object
  *
- * This is an internal function used to initialize
+ * This is a internal function used to initialize
  * a new fops_status_t object, which is bound to a single
  * struct file (and its lifecycle from ktext_open() to
  * ktext_release()).
@@ -97,7 +97,7 @@ fops_status_init_quit:
  *
  * @fs:	the fops_status_t object
  *
- * This is an internal function used to destroy
+ * This is a internal function used to destroy
  * a previously allocated fops_status_t object.
  *
  */
