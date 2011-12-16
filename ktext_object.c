@@ -127,6 +127,7 @@ ktext_push(ktext_object_t *k, char *text, size_t count)
 	ktext_object_node_t *n;
 	int status;
 	int lock_status;
+	size_t zeroed_count;
 
 	status = 0;
 
@@ -138,10 +139,12 @@ ktext_push(ktext_object_t *k, char *text, size_t count)
 		goto ktext_push_quit_noalloc;
 	}
 
+	zeroed_count = count + 1;
 #ifdef KTEXT_DEBUG
-	printk(KERN_NOTICE "ktext_push: preparing to kzalloc: %zd bytes\n", count);
+	printk(KERN_NOTICE "ktext_push: preparing to kzalloc: %zdb, for: %s\n",
+			zeroed_count, text);
 #endif
-	own_text = (char *) kzalloc((sizeof(char) * count), GFP_KERNEL);
+	own_text = (char *) kzalloc((sizeof(char) * zeroed_count), GFP_KERNEL);
 	if (own_text == NULL) {
 		printk(KERN_NOTICE "ktext_push: cannot allocate memory (damn)\n");
 		status = -ENOMEM;
