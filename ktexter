@@ -99,10 +99,12 @@ class Dispatcher(object):
         sys.stdout.write(text + "\n")
 
     def _reader_callback(self):
+        th_id = threading.current_thread().ident
         if KILL_ALL:
+            self._print_teal("[%s] reader dying" % (th_id,))
             return False
 
-        th_id = threading.current_thread().ident
+        t_start = time.time()
         secs = 0.0
         if self._readers_sleep_seconds:
             secs = self._readers_sleep_seconds
@@ -110,7 +112,6 @@ class Dispatcher(object):
                 secs += random.random() / 10
 
         self._print_teal("[%s] reader called, will sleep: %.4f" % (th_id, secs,))
-        t_start = time.time()
         text = None
         try:
             with open(self._device_file, "r") as dev_f:
@@ -136,14 +137,17 @@ class Dispatcher(object):
             # goodbye
             return False
         if KILL_ALL:
+            self._print_teal("[%s] reader dying" % (th_id,))
             return False
         return True
 
     def _writer_callback(self):
+        th_id = threading.current_thread().ident
         if KILL_ALL:
+            self._print_purple("[%s] writer dying" % (th_id,))
             return False
 
-        th_id = threading.current_thread().ident
+        t_start = time.time()
         secs = 0.0
         if self._writers_sleep_seconds:
             secs = self._writers_sleep_seconds
@@ -152,7 +156,6 @@ class Dispatcher(object):
 
 
         self._print_purple("[%s] writer called, will sleep: %.4f" % (th_id, secs,))
-        t_start = time.time()
         text = self._get_random_phrase()
         try:
             with open(self._device_file, "w") as dev_f:
@@ -178,6 +181,7 @@ class Dispatcher(object):
             self._print_purple("[%s] writer dying" % (th_id,))
             return False
         if KILL_ALL:
+            self._print_purple("[%s] writer dying" % (th_id,))
             return False
         return True
 
