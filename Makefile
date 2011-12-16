@@ -17,7 +17,7 @@ test: build
 	# NOTE: this is an unreliable test
 	-- rmmod ktext.ko &> /dev/null
 	insmod ktext.ko max_elements=0
-	./ktexter 3 3 2 2 --die=20
+	./ktexter 4 6 3 3 --die=20
 	rmmod ktext.ko
 
 else
