@@ -12,9 +12,8 @@ the FIFO. The maximum input buffer size is set, for security reasons, to
 be < PAGE_SIZE - 100 - 1 (the rest shall be truncated).
 
 Concurrency is handled through the typical readers/writer locking and can
-be switched at build time (read below).
-
-TODO ^^^
+be switched at build time between rw_semaphore Linux implementation and
+"preventive signal" (see KTEXT_ALT_RW_STARV_PROT).
 
 You must be root in order to access the /dev/ktext device, unless you
 explicitly chmod it or setup udev rules that configure the permissions.
@@ -42,7 +41,8 @@ for each open().
 KTEXT_ALT_RW_STARV_PROT -- if defined, an alternative readers/writers
 anti-starvation protocol will be used (instead of rw_semaphore).
 This protocol shall interleave readers with writers making possible
-to avoid writers starvation.
+to avoid writers starvation. It is otherwise known as "preventive
+signal" protocol.
 
 The kernel module supports the following insmod parameters:
 
@@ -108,6 +108,7 @@ waiting for all the readers to be done.
 In fact, the rw_semaphore is optimized for rare writes and very frequent, fast
 reads. The problem here is the "fast reads" part.
 
+Same exact results when using KTEXT_ALT_RW_STARV_PROT.
 
 # 2
 
@@ -141,6 +142,7 @@ It seems that the barrier is flip flopping from readers to writers, not changing
 the time taken. It for sure depends on "who" is making the first request after
 all the writers or readers have reached the barrier.
 
+Same exact results when using KTEXT_ALT_RW_STARV_PROT.
 
 # 3
 
@@ -165,7 +167,7 @@ If we take SCENARIO #3 and add --wsleep=0.2 (200ms), readers will take around 3s
 each.
 
 
-:: CONSIDERATIONS ::
+:: CONCLUSIONS ::
 
 First of all, increasing the sole write (or read) frequency, keeping
 the amount of writers (or readers) to one, doesn't cause any significant latency,
@@ -175,9 +177,11 @@ OK, but IRL it sucks.
 
 It is clear that, even if the latency goes up, but that's kinda expected when
 using either --wsleep or --rsleep, rw_semaphore does avoid the starvation to
-some degree, which is good. You always see both hands to be satisfied, but
-of course, with different latency and frequency. From my experiments, it does
-it, as also written above using some kind of readers or writers barrier.
-I haven't checked the internal implementation of rw_semaphore yet, so don't
-rely on my considerations.
+some degree, which is good and kinda expected. You always see both hands to
+be satisfied, but of course, with different latency and frequency.
+From my experiments, it achieves it, as also written above, using some kind
+of readers or writers barrier. I haven't checked the internal implementation
+of rw_semaphore yet, so don't rely on my considerations here.
 
+The "Preventive signal" protocol and the current (Linux 3.1) rw_semaphore
+behaviour with respect to starvation seem to be equivalent.
