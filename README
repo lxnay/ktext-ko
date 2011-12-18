@@ -3,7 +3,7 @@ ktext.ko -- Stash and Suck text from kernel memory.
 
 :: INTRODUCTION ::
 
-This module makes possible to write and text strings to and from kernel
+This module makes possible to write and read text strings to and from kernel
 memory. It is just a FIFO, you can write text by opening the device in write
 mode. You can read text by opening the same in read mode.
 
