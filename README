@@ -21,7 +21,7 @@ explicitly chmod it or setup udev rules that configure the permissions.
 
 Inside ktext_config.h, you can find the following macros:
 
-KTEXT_DEBUG -- if set, it enables verbose output to dmesg.
+KTEXT_DEBUG -- if set, enables verbose output to dmesg.
 
 KTEXT_NONBLOCK_SUPPORT (default 1) -- if set to one, O_NONBLOCK shall be
 taken into consideration and used to determine if the open() is allowed
