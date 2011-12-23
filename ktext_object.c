@@ -34,45 +34,20 @@
 #endif
 
 #include "ktext_config.h"
+#include "ktext_object_impl.h"
 #include "ktext_object.h"
+
 
 /**
  * struct ktext_object_node -	Linux list_head node objectm
  *
- * @text:				the actual text (payload)
- * @kl:					the list_head object
+ * @text:	the actual text (payload)
+ * @kl:		the list_head object
  */
 typedef struct ktext_object_node {
     char *text;
     struct list_head kl;
 } ktext_object_node_t;
-
-/**
- * struct ktext_object -	the ktree FIFO object implemented with
- * 							Kernel lists.
- *
- * @n_elem:				number of elements in the FIFO
- * @head:				the list_head object
- * @ktext_rwsem:		the readers/writers semaphore
- * @prot:				the semaphore protecting against concurrent
- * 						access to the object
- */
-typedef struct ktext_object {
-	size_t n_elem;
-	struct list_head head;
-#ifdef KTEXT_ALT_RW_STARV_PROT
-	int __nbr;
-	int __nbw;
-	int __nr;
-	int __nw;
-	struct semaphore __priv_r;
-	struct semaphore __priv_w;
-	struct mutex __m;
-#else
-	struct rw_semaphore __ktext_rwsem;
-#endif
-	struct mutex prot;
-} ktext_object_t;
 
 int __must_check
 ktext_object_init(ktext_object_t **k)
@@ -119,12 +94,27 @@ ktext_object_destroy(ktext_object_t **k)
     kfree(*k);
 }
 
-void
+/**
+ * ktext_object_node_init() -  initialize a previously allocated
+ *                             ktext_object_node_t
+ *
+ * @n:         the ktext_object_node_t object
+ * @text:      the text to attach to this ktext_object_node_t
+ *
+ */
+static void
 ktext_object_node_init(ktext_object_node_t *n, char *text) {
 	n->text = text;
 }
 
-void
+/**
+ * ktext_object_node_destroy() -       deinitialize a previously
+ *                                     initialized ktext_object_node_t
+ *
+ * @n: the ktext_object_node_t object
+ *
+ */
+static void
 ktext_object_node_destroy(ktext_object_node_t *n) {
 	if (n == NULL)
 		BUG();

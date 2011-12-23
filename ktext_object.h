@@ -29,16 +29,12 @@
 #include "ktext_config.h"
 
 /**
- * struct ktext_object_node -	Linux list_head node object.
- * 								Opaque object.
- */
-typedef struct ktext_object_node ktext_object_node_t;
-
-/**
  * struct ktext_object -	the ktree FIFO object implemented with
  * 				Kernel lists. Opaque object.
  */
+#ifndef KTEXT_OBJECT_T
 typedef struct ktext_object ktext_object_t;
+#endif
 
 /**
  * ktext_object_init() - initialize a previously allocated
@@ -59,27 +55,6 @@ ktext_object_init(ktext_object_t **k);
  */
 void
 ktext_object_destroy(ktext_object_t **k);
-
-/**
- * ktext_object_node_init() -	initialize a previously allocated
- * 						 		ktext_object_node_t
- *
- * @n:		the ktext_object_node_t object
- * @text:	the text to attach to this ktext_object_node_t
- *
- */
-void
-ktext_object_node_init(ktext_object_node_t *n, char *text);
-
-/**
- * ktext_object_node_destroy() -	deinitialize a previously
- * 									initialized ktext_object_node_t
- *
- * @n:	the ktext_object_node_t object
- *
- */
-void
-ktext_object_node_destroy(ktext_object_node_t *n);
 
 /**
  * ktext_push_allowed() - is there space left on the FIFO?
