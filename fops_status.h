@@ -25,14 +25,14 @@
 #define FOPS_STATUS_H_
 
 /**
- * struct fops_status - object used for tracking a request status
- * 						from ktext_open() through ktext_read() or
- * 						ktext_write() to ktext_release()
+ * struct fops_status - 	object used for tracking a request status
+ * 				from ktext_open() through ktext_read() or
+ * 				ktext_write() to ktext_release()
  *
- * @text:				the actual text string being processed
- * @count:				the offset in @text
- * @read_text_strlen:	strlen(@text), used by readers
- * @total:				size of @text buffer
+ * @text:			the actual text string being processed
+ * @count:			the offset in @text
+ * @read_text_strlen:		strlen(@text), used by readers
+ * @total:			size of @text buffer
  *
  * This object is private to a single request. Given this
  * scope, it doesn't require any protection.
