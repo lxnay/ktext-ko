@@ -1,7 +1,7 @@
 /*
  * ktext_object.c
  *
- * ktext_object_t functions used by ktext_mod.c.
+ * ktext_object functions used by ktext_mod.c.
  *
  * Copyright (C) 2011 Fabio Erculiani
  *
@@ -34,9 +34,34 @@
 #endif
 
 #include "ktext_config.h"
-#include "ktext_object_impl.h"
 #include "ktext_object.h"
 
+/**
+ * struct ktext_object -	the ktree FIFO object implemented with
+ * 				Kernel lists.
+ *
+ * @n_elem:		number of elements in the FIFO
+ * @head:		the list_head object
+ * @ktext_rwsem:	the readers/writers semaphore
+ * @prot:		the semaphore protecting against concurrent
+ * 			access to the object
+ */
+struct ktext_object {
+	size_t n_elem;
+	struct list_head head;
+#ifdef KTEXT_ALT_RW_STARV_PROT
+	int __nbr;
+	int __nbw;
+	int __nr;
+	int __nw;
+	struct semaphore __priv_r;
+	struct semaphore __priv_w;
+	struct mutex __m;
+#else
+	struct rw_semaphore __ktext_rwsem;
+#endif
+	struct mutex prot;
+};
 
 /**
  * struct ktext_object_node -	Linux list_head node objectm
@@ -58,7 +83,6 @@ ktext_object_init(ktext_object_t **k)
 		BUG_ON(k);
 		BUG();
 	}
-
 	*k = kmalloc(sizeof(ktext_object_t), GFP_KERNEL);
 	if (*k == NULL)
 		return -ENOMEM;
@@ -90,8 +114,9 @@ ktext_object_destroy(ktext_object_t **k)
 		BUG_ON(*k);
 		BUG();
 	}
-    ktext_empty(*k);
-    kfree(*k);
+
+	ktext_empty(*k);
+	kfree(*k);
 }
 
 /**

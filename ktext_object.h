@@ -32,15 +32,13 @@
  * struct ktext_object -	the ktree FIFO object implemented with
  * 				Kernel lists. Opaque object.
  */
-#ifndef KTEXT_OBJECT_T
 typedef struct ktext_object ktext_object_t;
-#endif
 
 /**
  * ktext_object_init() - initialize a previously allocated
- * 			 ktext_object_t.
+ * 			 ktext_object.
  *
- * @k:	the ktext_object_t object
+ * @k:	the ktext_object object
  *
  */
 int __must_check
@@ -49,8 +47,6 @@ ktext_object_init(ktext_object_t **k);
 /**
  * ktext_object_destroy() - 	deinitialize a previously initialized
  * 				ktext_object_t.
- *
- * @k:	the ktext_object_t object
  *
  */
 void
@@ -92,7 +88,7 @@ ktext_push(ktext_object_t *k, char *text, size_t count);
 /**
  * ktext_pop() - extract one string from the FIFO
  *
- * @k: 		the ktext_object_t object
+ * @k: 		the ktext_object object
  * @text:	the text pointer to write to (NULL if nothing to write)
  *
  * Extract a single string from the FIFO.
@@ -115,7 +111,7 @@ ktext_empty(ktext_object_t *k);
  * ktext_reader_trylock() - 	try to acquire a reader lock
  * 				on ktext_object_t
  *
- * @k: 	the ktext_object_t object
+ * @k: 	the ktext_object object
  *
  * Return 1 for success, 0 for failure.
  *
@@ -149,7 +145,7 @@ ktext_reader_lock(ktext_object_t *k);
  * ktext_writer_lock() - 	acquire a writer lock
  * 				(uninterruptible)
  *
- * @k: 	the ktext_object_t object
+ * @k: 	the ktext_object object
  *
  */
 int __must_check
