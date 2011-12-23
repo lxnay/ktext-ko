@@ -23,8 +23,8 @@
 
 #include "ktext_config.h"
 
+#include <linux/kernel.h>
 #include <linux/slab.h>
-#include <linux/printk.h>
 #include <linux/list.h>
 #ifdef KTEXT_ALT_RW_STARV_PROT
 #include <linux/semaphore.h>

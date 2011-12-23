@@ -22,7 +22,7 @@
  */
 
 #include <linux/slab.h>
-#include <linux/printk.h>
+#include <linux/kernel.h>
 
 #include "ktext_config.h"
 #include "fops_status.h"
