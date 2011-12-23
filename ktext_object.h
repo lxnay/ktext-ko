@@ -36,13 +36,13 @@ typedef struct ktext_object_node ktext_object_node_t;
 
 /**
  * struct ktext_object -	the ktree FIFO object implemented with
- * 							Kernel lists. Opaque object.
+ * 				Kernel lists. Opaque object.
  */
 typedef struct ktext_object ktext_object_t;
 
 /**
  * ktext_object_init() - initialize a previously allocated
- * 						 ktext_object_t.
+ * 			 ktext_object_t.
  *
  * @k:	the ktext_object_t object
  *
@@ -51,8 +51,8 @@ int __must_check
 ktext_object_init(ktext_object_t **k);
 
 /**
- * ktext_object_destroy() - deinitialize a previously initialized
- * 							ktext_object_t.
+ * ktext_object_destroy() - 	deinitialize a previously initialized
+ * 				ktext_object_t.
  *
  * @k:	the ktext_object_t object
  *
@@ -84,7 +84,7 @@ ktext_object_node_destroy(ktext_object_node_t *n);
 /**
  * ktext_push_allowed() - is there space left on the FIFO?
  *
- * @k:				the ktext_object_t object
+ * @k:			the ktext_object_t object
  * @max_elements:	maximum amount of elements allowed
  *
  * This function returns true if the ktext_object_t has
@@ -137,8 +137,8 @@ void
 ktext_empty(ktext_object_t *k);
 
 /**
- * ktext_reader_trylock() - try to acquire a reader lock
- * 							on ktext_object_t
+ * ktext_reader_trylock() - 	try to acquire a reader lock
+ * 				on ktext_object_t
  *
  * @k: 	the ktext_object_t object
  *
@@ -149,8 +149,8 @@ int __must_check
 ktext_reader_trylock(ktext_object_t *k);
 
 /**
- * ktext_writer_trylock() - try to acquire a writer lock
- * 							on ktext_object_t
+ * ktext_writer_trylock() - 	try to acquire a writer lock
+ * 				on ktext_object_t
  *
  * @k: 	the ktext_object_t object
  *
@@ -161,8 +161,8 @@ int __must_check
 ktext_writer_trylock(ktext_object_t *k);
 
 /**
- * ktext_reader_lock() - acquire a reader lock
- * 						 (uninterruptible)
+ * ktext_reader_lock() - 	acquire a reader lock
+ * 				(uninterruptible)
  *
  * @k: 	the ktext_object_t object
  *
@@ -171,8 +171,8 @@ int __must_check
 ktext_reader_lock(ktext_object_t *k);
 
 /**
- * ktext_writer_lock() - acquire a writer lock
- * 						 (uninterruptible)
+ * ktext_writer_lock() - 	acquire a writer lock
+ * 				(uninterruptible)
  *
  * @k: 	the ktext_object_t object
  *
