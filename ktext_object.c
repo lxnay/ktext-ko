@@ -317,7 +317,7 @@ ktext_reader_trylock(ktext_object_t *k) {
 	mutex_unlock(&k->__m);
 	down(&k->__priv_r); /* don't use trylock here */
 
-	return 0;
+	return 1;
 #else
 	return down_read_trylock(&k->__ktext_rwsem);
 #endif
@@ -338,7 +338,7 @@ ktext_writer_trylock(ktext_object_t *k) {
 	mutex_unlock(&k->__m);
 	down(&k->__priv_w); /* don't use trylock here */
 
-	return 0;
+	return 1;
 #else
 	return down_write_trylock(&k->__ktext_rwsem);
 #endif
