@@ -305,19 +305,36 @@ ktext_empty_quit:
 int __must_check
 ktext_reader_trylock(ktext_object_t *k) {
 #ifdef KTEXT_ALT_RW_STARV_PROT
-	if (!mutex_trylock(&k->__m))
-		return 0;
+	int status;
 
-	if (k->__nw > 0 || k->__nbw > 0)
+	status = 1;
+
+	if (!mutex_trylock(&k->__m)) {
+		status = 0;
+		goto ktext_reader_trylock_early_quit;
+	}
+	/* CRIT:ON */
+	if (k->__nw > 0 || k->__nbw > 0) {
 		k->__nbr++;
-	else {
+	} else {
 		k->__nr++;
 		up(&k->__priv_r);
 	}
-	mutex_unlock(&k->__m);
-	down(&k->__priv_r); /* don't use trylock here */
 
-	return 1;
+	if (down_trylock(&k->__priv_r)) {
+		/* rollback, if we get here
+		 * it's because we did k->__nbr++
+		 * since there are no other down()
+		 * on k->__priv_r */
+		status = 0;
+		k->__nbr--;
+	}
+	/* CRIT:OFF */
+	mutex_unlock(&k->__m);
+
+ktext_reader_trylock_early_quit:
+	return status;
+
 #else
 	return down_read_trylock(&k->__ktext_rwsem);
 #endif
@@ -326,19 +343,35 @@ ktext_reader_trylock(ktext_object_t *k) {
 int __must_check
 ktext_writer_trylock(ktext_object_t *k) {
 #ifdef KTEXT_ALT_RW_STARV_PROT
-	if (!mutex_trylock(&k->__m))
-		return 0;
+	int status;
 
-	if (k->__nr > 0 || k->__nw > 0)
+	status = 1;
+
+	if (!mutex_trylock(&k->__m)) {
+		status = 0;
+		goto ktext_writer_trylock_early_quit;
+	}
+	/* CRIT:ON */
+	if (k->__nr > 0 || k->__nw > 0) {
 		k->__nbw++;
-	else {
+	} else {
 		k->__nw++;
 		up(&k->__priv_w);
 	}
+	if (down_trylock(&k->__priv_w)) {
+		/* rollback, if we get here
+		 * it's because we did k->__nbw++
+		 * since there are no other down()
+		 * on k->__priv_w */
+		status = 0;
+		k->__nbw--;
+	}
+	/* CRIT:OFF */
 	mutex_unlock(&k->__m);
-	down(&k->__priv_w); /* don't use trylock here */
 
-	return 1;
+ktext_writer_trylock_early_quit:
+	return status;
+
 #else
 	return down_write_trylock(&k->__ktext_rwsem);
 #endif
