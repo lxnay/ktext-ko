@@ -165,6 +165,22 @@ If we take SCENARIO #3 and add --wsleep=0.2 (200ms), readers will take around 3s
 each.
 
 
+# 4
+
+Considering KTEXT_ALT_RW_STARV_PROT macro undefined and KTEXT_NONBLOCK_SUPPORT=0,
+the following call will cause writers to starve:
+
+	# ktexter 20 1 2 1 --rsleep=3 --sleep-randomize
+
+20 readers, 1 writer
+Each reader shall read with a 2Hz frequency.
+Each writer shall write with a 1Hz frequency.
+
+Forcing non blocking mode, given the current open() semantic, would cause the
+same to fail with -EWOULDBLOCK when in write mode, giving very little chance
+to writers to actually win the contention.
+
+
 :: CONCLUSIONS ::
 
 First of all, increasing the sole write (or read) frequency, keeping
