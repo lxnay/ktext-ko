@@ -26,9 +26,9 @@
 #include <linux/kernel.h>
 #include <linux/slab.h>
 #include <linux/list.h>
+#include <linux/version.h>
 
 #ifdef KTEXT_ALT_RW_STARV_PROT
-#include <linux/version.h>
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,26)
 #include <asm/semaphore.h>
 #else
