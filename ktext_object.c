@@ -26,12 +26,18 @@
 #include <linux/kernel.h>
 #include <linux/slab.h>
 #include <linux/list.h>
+
 #ifdef KTEXT_ALT_RW_STARV_PROT
+#include <linux/version.h>
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,26)
+#include <asm/semaphore.h>
+#else
 #include <linux/semaphore.h>
+#endif /* LINUX_VERSION_CODE */
 #include <linux/mutex.h>
 #else
 #include <linux/rwsem.h>
-#endif
+#endif /* KTEXT_ALT_RW_STARV_PROT */
 
 #include "ktext_config.h"
 #include "ktext_object.h"
@@ -217,6 +223,23 @@ ktext_push_quit_clean:
 ktext_push_quit_noalloc:
 	return status;
 }
+
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,22)
+
+/* commit b5e618181a927210f8be1d3d2249d31904ba358d */
+
+/**
+ * list_first_entry - get the first element from a list
+ * @ptr:	the list head to take the element from.
+ * @type:	the type of the struct this is embedded in.
+ * @member:	the name of the list_struct within the struct.
+ *
+ * Note, that list is expected to be not empty.
+ */
+#define list_first_entry(ptr, type, member) \
+	list_entry((ptr)->next, type, member)
+
+#endif
 
 int __must_check
 ktext_pop(ktext_object_t *k, char **text)

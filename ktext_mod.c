@@ -43,7 +43,14 @@
 #include <linux/module.h>
 #include <linux/slab.h>
 #include <linux/fs.h>
+#include <linux/version.h>
+
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,26)
+#include <asm/semaphore.h>
+#else
 #include <linux/semaphore.h>
+#endif /* LINUX_VERSION_CODE */
+
 #include <linux/miscdevice.h>
 #include <linux/list.h>
 #include <linux/init.h>
@@ -85,6 +92,7 @@ ktext_open(struct inode *inode, struct file *filp)
 	bool write_mode;
 	bool read_mode;
 	bool append;
+	const char *path;
 
 	read_mode = filp->f_mode & FMODE_READ;
 	write_mode = filp->f_mode & FMODE_WRITE;
@@ -104,10 +112,17 @@ ktext_open(struct inode *inode, struct file *filp)
 	status = 0;
 
 #ifdef KTEXT_DEBUG
+
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 20)
+	path = filp->f_dentry->d_name.name;
+#else
+	path = filp->f_path.dentry->d_name.name;
+#endif
+
 	printk(KERN_NOTICE "ktext_open: inode: %p - file: %p - path: %s, "
 			"read: %s, write: %s, non-blocking: %s, append: %s"
 			"\n",
-			inode, filp, filp->f_path.dentry->d_name.name,
+			inode, filp, path,
 			read_mode ? "true" : "false",
 			write_mode ? "true" : "false",
 			non_block ? "true" : "false",
@@ -318,6 +333,47 @@ ktext_read(struct file *filp, char __user *buf,
 ktext_read_quit:
 	return status;
 }
+
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,35)
+
+/* commit 6a727b43be8b005609e893a80af980808012cfdb */
+
+#include <asm/uaccess.h>
+
+/**
+ * simple_write_to_buffer - copy data from user space to the buffer
+ * @to: the buffer to write to
+ * @available: the size of the buffer
+ * @ppos: the current position in the buffer
+ * @from: the user space buffer to read from
+ * @count: the maximum number of bytes to read
+ *
+ * The simple_write_to_buffer() function reads up to @count bytes from the user
+ * space address starting at @from into the buffer @to at offset @ppos.
+ *
+ * On success, the number of bytes written is returned and the offset @ppos is
+ * advanced by this number, or negative value is returned on error.
+ **/
+ssize_t simple_write_to_buffer(void *to, size_t available, loff_t *ppos,
+		const void __user *from, size_t count)
+{
+	loff_t pos = *ppos;
+	size_t res;
+
+	if (pos < 0)
+		return -EINVAL;
+	if (pos >= available || !count)
+		return 0;
+	if (count > available - pos)
+		count = available - pos;
+	res = copy_from_user(to + pos, from, count);
+	if (res == count)
+		return -EFAULT;
+	count -= res;
+	*ppos = pos + count;
+	return count;
+}
+#endif
 
 /**
  * ktext_write() - the file_operations.write function.
