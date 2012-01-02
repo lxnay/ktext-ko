@@ -25,6 +25,6 @@ else
 $(info Building with KERNELRELEASE = ${KERNELRELEASE})
 
 obj-m := ktext.o
-ktext-y := ktext_mod.o ktext_object.o fops_status.o
+ktext-objs := ktext_mod.o ktext_object.o fops_status.o
 
 endif
