@@ -11,7 +11,7 @@ build:
 	$(MAKE) -C $(KERNELDIR) M=$(PWD) modules
 
 clean:
-	rm -rf *.o *~ core .depend modules.order Module.symvers .tmp_versions .*.cmd *.ko *.mod.c
+	$(MAKE) -C $(KERNELDIR) M=$(PWD) clean
 
 test: build
 	# NOTE: this is a unreliable test
