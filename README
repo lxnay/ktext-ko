@@ -1,6 +1,9 @@
 ==============================================================================
 ktext.ko -- Stash and Suck text from kernel memory.
 
+NOTE: DO NOT CLONE THE REPO IN A DIRECTORY CALLED ktext.ko OR KBUILD WILL GO
+BOOM.
+
 :: INTRODUCTION ::
 
 This module makes possible to write and read text strings to and from kernel
